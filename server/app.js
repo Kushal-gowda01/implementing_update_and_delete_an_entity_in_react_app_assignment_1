@@ -1,5 +1,6 @@
-const path = require('node:path');
-const fs = require('node:fs');
+// server.js
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 
@@ -12,18 +13,16 @@ const logRequests = (req, res, next) => {
     const startTime = new Date();
 
     // Capture the end function to get the response status
-    const end = res.end;
+    const originalEnd = res.end;
     res.end = function (chunk, encoding) {
-        res.end = end;
+        res.end = originalEnd;
         const endTime = new Date();
         const duration = endTime - startTime;
 
         console.log(
-            `[${endTime.toISOString()}] ${req.method} ${req.url} - ${res.statusCode
-            } - ${duration}ms`
+            `[${endTime.toISOString()}] ${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`
         );
 
-        // Call the original end function to complete the response
         res.end(chunk, encoding);
     };
 
@@ -61,12 +60,12 @@ const saveData = (key, data) => {
 };
 
 app.get('/doors', (_, res) => {
-    const doorsData = loadData('doors');
+    const doorsData = loadData('doors') || [];
     res.json(doorsData);
 });
 
 app.get('/doors/:id', (req, res) => {
-    const doorsData = loadData('doors');
+    const doorsData = loadData('doors') || [];
     const door = doorsData.find((door) => door.id === req.params.id);
     if (door) {
         return res.json(door);
@@ -76,7 +75,7 @@ app.get('/doors/:id', (req, res) => {
 });
 
 app.post('/doors', (req, res) => {
-    const doorsData = loadData('doors');
+    const doorsData = loadData('doors') || [];
     const newDoor = { id: (doorsData.length + 1).toString(), ...req.body };
     doorsData.push(newDoor);
     saveData('doors', doorsData);
@@ -84,10 +83,10 @@ app.post('/doors', (req, res) => {
 });
 
 app.put('/doors/:id', (req, res) => {
-    const doorsData = loadData('doors');
+    const doorsData = loadData('doors') || [];
     const doorIndex = doorsData.findIndex((door) => door.id === req.params.id);
 
-    // dont allow to update 'id' field
+    // Don't allow updating the 'id' field
     delete req.body.id;
 
     if (doorIndex !== -1) {
@@ -100,7 +99,7 @@ app.put('/doors/:id', (req, res) => {
 });
 
 app.delete('/doors/:id', (req, res) => {
-    const doorsData = loadData('doors');
+    const doorsData = loadData('doors') || [];
     const doorIndex = doorsData.findIndex((door) => door.id === req.params.id);
     if (doorIndex !== -1) {
         const deletedDoor = doorsData[doorIndex];
@@ -113,5 +112,5 @@ app.delete('/doors/:id', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 server is running on ${PORT}`);
+    console.log(`🚀 Server is running on port ${PORT}`);
 });
